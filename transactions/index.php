@@ -7,7 +7,6 @@ $status = $_GET['status'] ?? 'all';
 $student_id = isset($_GET['student_id']) ? (int)$_GET['student_id'] : 0;
 $book_id = isset($_GET['book_id']) ? (int)$_GET['book_id'] : 0;
 
-// Build WHERE clause for filters
 $where = [];
 $params = [];
 

@@ -1,14 +1,12 @@
 <?php
-// Start session and handle all PHP logic at the top
 session_start();
 require_once '../includes/config.php';
 
-// Handle book deletion before any output
 if (isset($_GET['delete'])) {
     $bookId = (int)$_GET['delete'];
     
     try {
-        // Mark book as deleted (soft delete)
+        
         $stmt = $pdo->prepare("UPDATE booklist SET deleted = 1 WHERE id = ?");
         $stmt->execute([$bookId]);
         
@@ -22,7 +20,7 @@ if (isset($_GET['delete'])) {
     }
 }
 
-// Pagination and search setup
+
 $perPage = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $start = ($page > 1) ? ($page * $perPage) - $perPage : 0;

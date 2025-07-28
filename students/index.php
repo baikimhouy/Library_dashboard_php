@@ -1,9 +1,7 @@
 <?php
-// Start session and handle all PHP logic at the top
 session_start();
 require_once '../includes/config.php';
 
-// Handle student export
 if (isset($_GET['export'])) {
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="students_export_' . date('Y-m-d') . '.csv"');
@@ -20,18 +18,15 @@ if (isset($_GET['export'])) {
     exit();
 }
 
-// Handle student deletion before any output
 if (isset($_GET['delete_id'])) {
     $studentId = (int)$_GET['delete_id'];
     
     try {
-        // Check if student has active book borrowings
         $borrowedCount = $pdo->query("SELECT COUNT(*) FROM borrow_book WHERE student_id = $studentId AND return_date IS NULL")->fetchColumn();
         
         if ($borrowedCount > 0) {
             $_SESSION['error'] = "Cannot delete student - they have active book borrowings";
         } else {
-            // Mark student as deleted (soft delete)
             $stmt = $pdo->prepare("UPDATE student_information SET deleted = 1 WHERE id = ?");
             $stmt->execute([$studentId]);
             
@@ -47,7 +42,6 @@ if (isset($_GET['delete_id'])) {
     }
 }
 
-// Pagination + Search setup
 $perPage = 15;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $start = ($page > 1) ? ($page * $perPage) - $perPage : 0;
@@ -81,7 +75,6 @@ if (!empty($search)) {
 }
 $students = $stmt->fetchAll();
 
-// Now include header after all PHP processing
 require_once '../includes/header.php';
 ?>
 

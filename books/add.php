@@ -55,7 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Load the HTML layout after logic
 require_once '../includes/header.php';
 ?>
 
@@ -157,6 +156,5 @@ require_once '../includes/header.php';
 </div>
 
 <?php
-// Flush output at the end
 ob_end_flush();
 ?>

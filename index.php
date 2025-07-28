@@ -1,5 +1,4 @@
 <?php
-// Absolute first thing - start output buffering
 if (!ob_get_level()) {
     ob_start();
 }
@@ -7,7 +6,6 @@ if (!ob_get_level()) {
 require_once 'includes/config.php';
 $base_url = '/Library_Dashboard';
 
-// Get statistics for the dashboard
 $stats = [
     'students' => $pdo->query("SELECT COUNT(*) FROM student_information")->fetchColumn(),
     'books' => $pdo->query("SELECT COUNT(*) FROM booklist")->fetchColumn(),
@@ -23,9 +21,7 @@ $stats = [
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Library Dashboard</title>
 
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
     tailwind.config = {
@@ -44,7 +40,6 @@ $stats = [
     }
   </script>
   <style>
-    /* Custom styles */
     .sidebar-transition {
       transition: transform 0.3s ease-in-out;
     }
@@ -66,7 +61,6 @@ $stats = [
 </head>
 <body class="bg-romantic-pale min-h-screen flex flex-col md:flex-row">
 
-  <!-- Mobile Header (hidden on desktop) -->
   <header class="md:hidden bg-gradient-to-r from-romantic-deepblue to-romantic-lightblue text-white p-4 flex justify-between items-center">
     <h1 class="text-xl font-bold">Library System</h1>
     <button id="menu-btn" class="text-white focus:outline-none text-2xl">
@@ -106,7 +100,6 @@ $stats = [
         </a>
       </nav>
 
-      <!-- User/Settings at bottom -->
       <div class="pt-4 border-t border-white/20 mt-auto">
         <a href="#" class="flex items-center p-3 rounded-lg hover:bg-white/20 transition">
           <i class="fas fa-cog w-5 h-5 mr-3 text-center"></i>
@@ -116,7 +109,6 @@ $stats = [
     </div>
   </aside>
 
-  <!-- Overlay for mobile menu -->
   <div id="overlay" class="fixed inset-0 bg-black/50 z-40 md:hidden hidden"></div>
 
   <!-- Main Content -->
@@ -303,7 +295,6 @@ $stats = [
     </div>
   </main>
 
-  <!-- JavaScript -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const menuBtn = document.getElementById('menu-btn');

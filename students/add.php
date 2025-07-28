@@ -1,8 +1,6 @@
 <?php
-// Absolute first line - no whitespace before this!
 require_once('../includes/config.php');
 
-// Process form before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstname = $_POST['firstname'];
     $lastname = $_POST['lastname'];
@@ -14,24 +12,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("INSERT INTO student_information (firstname, lastname, email, gender, registerdate) VALUES (?, ?, ?, ?, ?)");
         $stmt->execute([$firstname, $lastname, $email, $gender, $registerdate]);
         
-        // Clear any buffered output
         while (ob_get_level()) {
             ob_end_clean();
         }
         
-        // Redirect and exit
         header("Location: index.php?added=1");
         exit();
     } catch (PDOException $e) {
-        // Handle error without outputting here
         $error = $e->getMessage();
     }
 }
 
-// Now include header
 require_once('../includes/header.php');
 
-// Display error if one occurred
 if (isset($error)) {
     echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">';
     echo '<span class="block sm:inline">Error: ' . htmlspecialchars($error) . '</span>';

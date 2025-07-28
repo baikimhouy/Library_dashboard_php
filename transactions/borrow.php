@@ -5,7 +5,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $student_id = $_POST['student_id'];
     $book_id = $_POST['book_id'];
 
-    // Get book details
     $stmt = $pdo->prepare("SELECT bookname, bookcode FROM booklist WHERE id = ?");
     $stmt->execute([$book_id]);
     $book = $stmt->fetch();
@@ -18,12 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $pdo->prepare("INSERT INTO borrow_book (bookname, bookcode, student_id, book_id, borrow_date, return_date) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->execute([$book['bookname'], $book['bookcode'], $student_id, $book_id, $borrow_date, $return_date]);
 
-    // Redirect before output
     header("Location: index.php?borrowed=1");
     exit();
 }
 
-require_once '../includes/header.php'; // Now safe to include
+require_once '../includes/header.php';
 
 
 // Fetch all students and available books
