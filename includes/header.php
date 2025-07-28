@@ -1,5 +1,11 @@
 <?php
-$base_url = '/Library_Dashboard'; // Change to match your project root
+// Absolute first thing - start output buffering
+if (!ob_get_level()) {
+    ob_start();
+}
+
+require_once 'config.php';
+$base_url = '/Library_Dashboard';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,6 +16,8 @@ $base_url = '/Library_Dashboard'; // Change to match your project root
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
     tailwind.config = {
       theme: {
@@ -26,55 +34,80 @@ $base_url = '/Library_Dashboard'; // Change to match your project root
       },
     }
   </script>
+  <style>
+    /* Custom styles */
+    .sidebar-transition {
+      transition: transform 0.3s ease-in-out;
+    }
+    .nav-item {
+      transition: all 0.2s ease;
+    }
+    .nav-item:hover {
+      transform: translateX(4px);
+    }
+    .card-hover {
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px rgba(86, 136, 201, 0.3);
+    }
+  </style>
 </head>
-<body class="bg-romantic-pale min-h-screen flex flex-col">
+<body class="bg-romantic-pale min-h-screen flex flex-col md:flex-row">
 
-<!-- Tailwind Navbar -->
-<header class="bg-gradient-to-r from-romantic-deepblue to-romantic-lightblue text-white shadow-lg">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center justify-between h-16">
-      <!-- Logo / Brand -->
-      <div class="flex items-center">
-        <a href="<?= $base_url ?>/index.php" class="text-xl font-bold"></a>
+  <!-- Mobile Header (hidden on desktop) -->
+  <header class="md:hidden bg-gradient-to-r from-romantic-deepblue to-romantic-lightblue text-white p-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Library System</h1>
+    <button id="menu-btn" class="text-white focus:outline-none text-2xl">
+      <i class="fas fa-bars"></i>
+    </button>
+  </header>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="w-64 bg-gradient-to-b from-romantic-deepblue to-romantic-lightblue text-white shadow-lg fixed h-full sidebar-transition transform -translate-x-full md:translate-x-0 z-50">
+    <div class="p-4 h-full flex flex-col">
+      <!-- Logo/Brand -->
+      <div class="text-xl font-bold mb-8 pl-2 flex items-center">
+        <i class="fas fa-book-reader mr-2"></i>
+        <span>Library System</span>
       </div>
+      
+      <!-- Navigation Links -->
+      <nav class="space-y-2 flex-1">
+        <a href="<?= $base_url ?>/index.php" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition">
+          <i class="fas fa-home w-5 h-5 mr-3 text-center"></i>
+          <span>Dashboard</span>
+        </a>
+        
+        <a href="<?= $base_url ?>/students/index.php" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition">
+          <i class="fas fa-user-graduate w-5 h-5 mr-3 text-center"></i>
+          <span>Students</span>
+        </a>
+        
+        <a href="<?= $base_url ?>/books/index.php" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition">
+          <i class="fas fa-book w-5 h-5 mr-3 text-center"></i>
+          <span>Books</span>
+        </a>
+        
+        <a href="<?= $base_url ?>/transactions/index.php" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition">
+          <i class="fas fa-exchange-alt w-5 h-5 mr-3 text-center"></i>
+          <span>Transactions</span>
+        </a>
+      </nav>
 
-      <!-- Menu (desktop) -->
-      <div class="hidden md:flex space-x-4">
-        <a href="<?= $base_url ?>/index.php" class="hover:bg-white/20 px-3 py-2 rounded">Dashboard</a>
-        <a href="<?= $base_url ?>/students/index.php" class="hover:bg-white/20 px-3 py-2 rounded">Students</a>
-        <a href="<?= $base_url ?>/books/index.php" class="hover:bg-white/20 px-3 py-2 rounded">Books</a>
-        <a href="<?= $base_url ?>/transactions/index.php" class="hover:bg-white/20 px-3 py-2 rounded">Transactions</a>
-      </div>
-
-      <!-- Mobile menu button -->
-      <div class="md:hidden">
-        <button id="menu-btn" class="text-white focus:outline-none">
-          ☰
-        </button>
+      <!-- User/Settings at bottom -->
+      <div class="pt-4 border-t border-white/20 mt-auto">
+        <a href="#" class="flex items-center p-3 rounded-lg hover:bg-white/20 transition">
+          <i class="fas fa-cog w-5 h-5 mr-3 text-center"></i>
+          <span>Settings</span>
+        </a>
       </div>
     </div>
-  </div>
+  </aside>
 
-  <!-- Mobile Menu -->
-  <div id="mobile-menu" class="md:hidden hidden px-4 pb-4">
-    <a href="<?= $base_url ?>/index.php" class="block px-3 py-2 rounded hover:bg-white/20">Dashboard</a>
-    <a href="<?= $base_url ?>/students/index.php" class="block px-3 py-2 rounded hover:bg-white/20">Students</a>
-    <a href="<?= $base_url ?>/books/index.php" class="block px-3 py-2 rounded hover:bg-white/20">Books</a>
-    <a href="<?= $base_url ?>/transactions/index.php" class="block px-3 py-2 rounded hover:bg-white/20">Transactions</a>
-  </div>
-</header>
+  <!-- Overlay for mobile menu -->
+  <div id="overlay" class="fixed inset-0 bg-black/50 z-40 md:hidden hidden"></div>
 
-<!-- JavaScript to toggle mobile menu -->
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('menu-btn');
-    const menu = document.getElementById('mobile-menu');
-
-    btn.addEventListener('click', () => {
-      menu.classList.toggle('hidden');
-    });
-  });
-</script>
-
-<!-- Page content starts -->
-<main class="flex-grow container mx-auto px-4 py-8">
+  <!-- Main Content -->

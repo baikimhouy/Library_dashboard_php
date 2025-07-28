@@ -1,6 +1,5 @@
 <?php
 require_once '../includes/config.php';
-require_once '../includes/header.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $student_id = $_POST['student_id'];
@@ -12,16 +11,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $book = $stmt->fetch();
 
     // Set dates
-    $borrow_date = date('Y-m-d'); // Today
-    $return_date = null; // Not yet returned
+    $borrow_date = date('Y-m-d');
+    $return_date = null;
 
     // Record the borrowing
     $stmt = $pdo->prepare("INSERT INTO borrow_book (bookname, bookcode, student_id, book_id, borrow_date, return_date) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->execute([$book['bookname'], $book['bookcode'], $student_id, $book_id, $borrow_date, $return_date]);
 
+    // Redirect before output
     header("Location: index.php?borrowed=1");
     exit();
 }
+
+require_once '../includes/header.php'; // Now safe to include
+
 
 // Fetch all students and available books
 $students = $pdo->query("SELECT * FROM student_information ORDER BY lastname, firstname")->fetchAll();
@@ -29,16 +32,6 @@ $books = $pdo->query("SELECT * FROM booklist WHERE id NOT IN (SELECT book_id FRO
 ?>
 
 <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-romantic-deepblue">Borrow a Book</h1>
-        <a href="index.php" class="flex items-center text-romantic-deepblue hover:text-romantic-lightblue">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-            </svg>
-            Back to Transactions
-        </a>
-    </div>
-
     <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-3xl mx-auto">
         <div class="bg-gradient-to-r from-romantic-lightblue to-romantic-deepblue px-6 py-4">
             <h2 class="text-xl font-semibold text-white">Book Borrowing</h2>
@@ -102,4 +95,3 @@ $books = $pdo->query("SELECT * FROM booklist WHERE id NOT IN (SELECT book_id FRO
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>

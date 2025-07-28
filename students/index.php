@@ -1,8 +1,9 @@
 <?php
+// Start session and handle all PHP logic at the top
+session_start();
 require_once '../includes/config.php';
-require_once '../includes/header.php';
 
-// Export to CSV
+// Handle student export
 if (isset($_GET['export'])) {
     header('Content-Type: text/csv');
     header('Content-Disposition: attachment; filename="students_export_' . date('Y-m-d') . '.csv"');
@@ -10,7 +11,7 @@ if (isset($_GET['export'])) {
     $output = fopen('php://output', 'w');
     fputcsv($output, ['ID', 'First Name', 'Last Name', 'Email', 'Gender', 'Registration Date']);
 
-    $stmt = $pdo->query("SELECT * FROM student_information ORDER BY lastname, firstname");
+    $stmt = $pdo->query("SELECT * FROM student_information WHERE deleted = 0 ORDER BY lastname, firstname");
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         fputcsv($output, $row);
     }
@@ -19,13 +20,44 @@ if (isset($_GET['export'])) {
     exit();
 }
 
+// Handle student deletion before any output
+if (isset($_GET['delete_id'])) {
+    $studentId = (int)$_GET['delete_id'];
+    
+    try {
+        // Check if student has active book borrowings
+        $borrowedCount = $pdo->query("SELECT COUNT(*) FROM borrow_book WHERE student_id = $studentId AND return_date IS NULL")->fetchColumn();
+        
+        if ($borrowedCount > 0) {
+            $_SESSION['error'] = "Cannot delete student - they have active book borrowings";
+        } else {
+            // Mark student as deleted (soft delete)
+            $stmt = $pdo->prepare("UPDATE student_information SET deleted = 1 WHERE id = ?");
+            $stmt->execute([$studentId]);
+            
+            $_SESSION['success'] = "Student deleted successfully";
+        }
+        
+        header("Location: index.php");
+        exit();
+    } catch (PDOException $e) {
+        $_SESSION['error'] = "Error deleting student: " . $e->getMessage();
+        header("Location: index.php");
+        exit();
+    }
+}
+
 // Pagination + Search setup
 $perPage = 15;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $start = ($page > 1) ? ($page * $perPage) - $perPage : 0;
 $search = $_GET['search'] ?? '';
-$where = !empty($search) ? "WHERE firstname LIKE :search OR lastname LIKE :search OR email LIKE :search" : '';
+$where = "WHERE deleted = 0";
+if (!empty($search)) {
+    $where .= " AND (firstname LIKE :search OR lastname LIKE :search OR email LIKE :search)";
+}
 
+// Get total students
 $total = $pdo->prepare("SELECT COUNT(*) FROM student_information $where");
 if (!empty($search)) {
     $total->execute(['search' => "%$search%"]);
@@ -35,6 +67,7 @@ if (!empty($search)) {
 $totalStudents = $total->fetchColumn();
 $pages = ceil($totalStudents / $perPage);
 
+// Get students with pagination
 $stmt = $pdo->prepare("
     SELECT * FROM student_information 
     $where
@@ -47,6 +80,9 @@ if (!empty($search)) {
     $stmt->execute();
 }
 $students = $stmt->fetchAll();
+
+// Now include header after all PHP processing
+require_once '../includes/header.php';
 ?>
 
 <!DOCTYPE html>
@@ -57,23 +93,6 @@ $students = $stmt->fetchAll();
     <title>Student Management</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        romantic: {
-                            pink: '#BREADD',
-                            deepblue: '#5688C9',
-                            lightblue: '#8CCDE9',
-                            pale: '#EBFBFA',
-                            gradient: 'linear-gradient(to right, #8CCDE9, #5688C9)'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         .bg-romantic-gradient {
             background: linear-gradient(to right, #8CCDE9, #5688C9);
@@ -81,7 +100,7 @@ $students = $stmt->fetchAll();
     </style>
 </head>
 <body class="bg-romantic-pale min-h-screen">
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4 py-4">
         <div class="max-w-7xl mx-auto">
             <!-- Header -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -102,31 +121,27 @@ $students = $stmt->fetchAll();
                 </div>
             </div>
 
-            <!-- Alerts -->
-            <?php if (isset($_GET['deleted'])): ?>
+            <!-- Status Messages -->
+            <?php if (isset($_SESSION['success'])): ?>
                 <div class="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg shadow-sm flex items-center">
                     <i class="fas fa-check-circle mr-3 text-xl"></i>
                     <div>
                         <p class="font-medium">Success!</p>
-                        <p>Student deleted successfully.</p>
+                        <p><?= htmlspecialchars($_SESSION['success']) ?></p>
                     </div>
                 </div>
-            <?php elseif (isset($_GET['added'])): ?>
-                <div class="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg shadow-sm flex items-center">
-                    <i class="fas fa-check-circle mr-3 text-xl"></i>
+                <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-lg shadow-sm flex items-center">
+                    <i class="fas fa-exclamation-circle mr-3 text-xl"></i>
                     <div>
-                        <p class="font-medium">Success!</p>
-                        <p>Student added successfully.</p>
+                        <p class="font-medium">Error!</p>
+                        <p><?= htmlspecialchars($_SESSION['error']) ?></p>
                     </div>
                 </div>
-            <?php elseif (isset($_GET['updated'])): ?>
-                <div class="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg shadow-sm flex items-center">
-                    <i class="fas fa-check-circle mr-3 text-xl"></i>
-                    <div>
-                        <p class="font-medium">Success!</p>
-                        <p>Student updated successfully.</p>
-                    </div>
-                </div>
+                <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
 
             <!-- Search Card -->
@@ -240,26 +255,26 @@ $students = $stmt->fetchAll();
                                                 </span>
                                             <?php endif; ?>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <div class="flex space-x-3">
-                                                <a href="edit.php?id=<?= $student['id'] ?>" 
-                                                   class="text-blue-600 hover:text-blue-800 flex items-center"
-                                                   title="Edit">
-                                                    <i class="fas fa-edit mr-1"></i> Edit
-                                                </a>
-                                                <a href="index.php?delete=<?= $student['id'] ?>" 
-                                                   onclick="return confirm('Are you sure you want to delete this student?')"
-                                                   class="text-red-600 hover:text-red-800 flex items-center"
-                                                   title="Delete">
-                                                    <i class="fas fa-trash-alt mr-1"></i> Delete
-                                                </a>
-                                                <a href="../transactions/borrow.php?student_id=<?= $student['id'] ?>" 
-                                                   class="text-green-600 hover:text-green-800 flex items-center"
-                                                   title="Borrow Book">
-                                                    <i class="fas fa-book-medical mr-1"></i> Borrow
-                                                </a>
-                                            </div>
-                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+    <div class="flex justify-center space-x-3">
+        <a href="edit.php?id=<?= $student['id'] ?>" 
+           class="w-9 h-9 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full hover:bg-blue-200 transition duration-200"
+           title="Edit">
+            <i class="fas fa-pencil-alt"></i>
+        </a>
+        <a href="index.php?delete_id=<?= $student['id'] ?>" 
+           class="w-9 h-9 flex items-center justify-center bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition duration-200"
+           title="Delete"
+           onclick="return confirm('Are you sure you want to delete this student?')">
+            <i class="fas fa-trash-alt"></i>
+        </a>
+        <a href="../transactions/borrow.php?student_id=<?= $student['id'] ?>" 
+           class="w-9 h-9 flex items-center justify-center bg-green-100 text-green-600 rounded-full hover:bg-green-200 transition duration-200"
+           title="View Borrowed Books">
+            <i class="fas fa-book-open"></i>
+        </a>
+    </div>
+</td>
                                     </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -343,5 +358,3 @@ $students = $stmt->fetchAll();
     </div>
 </body>
 </html>
-
-<?php require_once '../includes/footer.php'; ?>

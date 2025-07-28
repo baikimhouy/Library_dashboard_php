@@ -1,20 +1,39 @@
 <?php
+// Start session and handle all PHP logic at the top
+session_start();
 require_once '../includes/config.php';
-require_once '../includes/header.php';
 
-// Pagination setup
+// Handle book deletion before any output
+if (isset($_GET['delete'])) {
+    $bookId = (int)$_GET['delete'];
+    
+    try {
+        // Mark book as deleted (soft delete)
+        $stmt = $pdo->prepare("UPDATE booklist SET deleted = 1 WHERE id = ?");
+        $stmt->execute([$bookId]);
+        
+        $_SESSION['success'] = "Book deleted successfully";
+        header("Location: index.php");
+        exit();
+    } catch (PDOException $e) {
+        $_SESSION['error'] = "Error deleting book: " . $e->getMessage();
+        header("Location: index.php");
+        exit();
+    }
+}
+
+// Pagination and search setup
 $perPage = 10;
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $start = ($page > 1) ? ($page * $perPage) - $perPage : 0;
 
-// Search functionality
 $search = isset($_GET['search']) ? $_GET['search'] : '';
-$where = '';
+$where = "WHERE deleted = 0";
 if (!empty($search)) {
-    $where = "WHERE bookname LIKE :search OR bookcode LIKE :search OR booknote LIKE :search";
+    $where .= " AND (bookname LIKE :search OR bookcode LIKE :search OR booknote LIKE :search)";
 }
 
-// Get total books for pagination
+// Get total books
 $total = $pdo->prepare("SELECT COUNT(*) FROM booklist $where");
 if (!empty($search)) {
     $total->execute(['search' => "%$search%"]);
@@ -25,22 +44,16 @@ $totalBooks = $total->fetchColumn();
 $pages = ceil($totalBooks / $perPage);
 
 // Get books with pagination
-$stmt = $pdo->prepare("
-    SELECT * FROM booklist 
-    $where
-    ORDER BY bookname
-    LIMIT $start, $perPage
-");
-
+$stmt = $pdo->prepare("SELECT * FROM booklist $where ORDER BY bookname LIMIT $start, $perPage");
 if (!empty($search)) {
     $stmt->execute(['search' => "%$search%"]);
 } else {
     $stmt->execute();
 }
-
 $books = $stmt->fetchAll();
-?>
 
+require_once '../includes/header.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -49,30 +62,13 @@ $books = $stmt->fetchAll();
     <title>Book Management</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        romantic: {
-                            pink: '#BREADD',
-                            deepblue: '#5688C9',
-                            lightblue: '#8CCDE9',
-                            pale: '#EBFBFA',
-                            gradient: 'linear-gradient(to right, #8CCDE9, #5688C9)'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
         .bg-romantic-gradient {
             background: linear-gradient(to right, #8CCDE9, #5688C9);
         }
     </style>
 </head>
-<body class="bg-romantic-pale min-h-screen">
+<body class="bg-romantic-pale">
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-7xl mx-auto">
             <!-- Header -->
@@ -84,7 +80,6 @@ $books = $stmt->fetchAll();
                     <p class="text-romantic-lightblue mt-1">Manage your library collection</p>
                 </div>
                 
-                <!-- Search and Add Book -->
                 <div class="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                     <form method="get" class="flex-1">
                         <div class="relative">
@@ -106,30 +101,26 @@ $books = $stmt->fetchAll();
             </div>
 
             <!-- Status Messages -->
-            <?php if (isset($_GET['deleted'])): ?>
+            <?php if (isset($_SESSION['success'])): ?>
                 <div class="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg shadow-sm flex items-center">
                     <i class="fas fa-check-circle mr-3 text-xl"></i>
                     <div>
                         <p class="font-medium">Success!</p>
-                        <p>Book deleted successfully.</p>
+                        <p><?= htmlspecialchars($_SESSION['success']) ?></p>
                     </div>
                 </div>
-            <?php elseif (isset($_GET['added'])): ?>
-                <div class="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg shadow-sm flex items-center">
-                    <i class="fas fa-check-circle mr-3 text-xl"></i>
+                <?php unset($_SESSION['success']); ?>
+            <?php endif; ?>
+
+            <?php if (isset($_SESSION['error'])): ?>
+                <div class="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-lg shadow-sm flex items-center">
+                    <i class="fas fa-exclamation-circle mr-3 text-xl"></i>
                     <div>
-                        <p class="font-medium">Success!</p>
-                        <p>Book added successfully.</p>
+                        <p class="font-medium">Error!</p>
+                        <p><?= htmlspecialchars($_SESSION['error']) ?></p>
                     </div>
                 </div>
-            <?php elseif (isset($_GET['updated'])): ?>
-                <div class="mb-6 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-lg shadow-sm flex items-center">
-                    <i class="fas fa-check-circle mr-3 text-xl"></i>
-                    <div>
-                        <p class="font-medium">Success!</p>
-                        <p>Book updated successfully.</p>
-                    </div>
-                </div>
+                <?php unset($_SESSION['error']); ?>
             <?php endif; ?>
 
             <!-- Books Card -->
@@ -233,42 +224,22 @@ $books = $stmt->fetchAll();
                                 </div>
                                 <nav class="flex space-x-1">
                                     <?php if ($page > 1): ?>
-                                        <a 
-                                            href="?page=<?= $page-1 ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?>" 
-                                            class="px-3 py-1 border border-gray-300 rounded-l-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center"
-                                        >
+                                        <a href="?page=<?= $page-1 ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?>" 
+                                           class="px-3 py-1 border border-gray-300 rounded-l-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center">
                                             <i class="fas fa-chevron-left mr-1"></i> Previous
                                         </a>
                                     <?php endif; ?>
                                     
-                                    <?php 
-                                    // Show limited page numbers with ellipsis
-                                    $maxVisiblePages = 5;
-                                    $startPage = max(1, $page - floor($maxVisiblePages/2));
-                                    $endPage = min($pages, $startPage + $maxVisiblePages - 1);
-                                    
-                                    if ($startPage > 1): ?>
-                                        <span class="px-3 py-1 border border-gray-300 text-gray-700">...</span>
-                                    <?php endif;
-                                    
-                                    for ($i = $startPage; $i <= $endPage; $i++): ?>
-                                        <a 
-                                            href="?page=<?= $i ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?>" 
-                                            class="px-3 py-1 border border-gray-300 <?= ($page == $i) ? 'bg-romantic-deepblue text-white border-romantic-deepblue' : 'text-gray-700 hover:bg-gray-50' ?> transition-colors"
-                                        >
+                                    <?php for ($i = 1; $i <= $pages; $i++): ?>
+                                        <a href="?page=<?= $i ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?>" 
+                                           class="px-3 py-1 border border-gray-300 <?= ($page == $i) ? 'bg-romantic-deepblue text-white border-romantic-deepblue' : 'text-gray-700 hover:bg-gray-50' ?> transition-colors">
                                             <?= $i ?>
                                         </a>
-                                    <?php endfor;
-                                    
-                                    if ($endPage < $pages): ?>
-                                        <span class="px-3 py-1 border border-gray-300 text-gray-700">...</span>
-                                    <?php endif; ?>
+                                    <?php endfor; ?>
                                     
                                     <?php if ($page < $pages): ?>
-                                        <a 
-                                            href="?page=<?= $page+1 ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?>" 
-                                            class="px-3 py-1 border border-gray-300 rounded-r-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center"
-                                        >
+                                        <a href="?page=<?= $page+1 ?><?= !empty($search) ? '&search='.urlencode($search) : '' ?>" 
+                                           class="px-3 py-1 border border-gray-300 rounded-r-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center">
                                             Next <i class="fas fa-chevron-right ml-1"></i>
                                         </a>
                                     <?php endif; ?>
@@ -282,18 +253,10 @@ $books = $stmt->fetchAll();
                                 <i class="fas fa-book text-4xl"></i>
                             </div>
                             <h3 class="text-lg font-medium text-gray-900 mb-1">
-                                <?php if (!empty($search)): ?>
-                                    No books found
-                                <?php else: ?>
-                                    Your library is empty
-                                <?php endif; ?>
+                                <?= !empty($search) ? 'No books found' : 'Your library is empty' ?>
                             </h3>
                             <p class="text-gray-500 max-w-md mx-auto mb-4">
-                                <?php if (!empty($search)): ?>
-                                    Your search for "<?= htmlspecialchars($search) ?>" didn't match any books.
-                                <?php else: ?>
-                                    Start building your collection by adding the first book.
-                                <?php endif; ?>
+                                <?= !empty($search) ? 'Your search for "' . htmlspecialchars($search) . '" didn\'t match any books.' : 'Start building your collection by adding the first book.' ?>
                             </p>
                             <a href="add.php" class="inline-flex items-center px-5 py-2.5 bg-romantic-pink text-white rounded-lg hover:bg-romantic-deepblue transition-colors shadow-md">
                                 <i class="fas fa-plus mr-2"></i> Add First Book
@@ -306,5 +269,3 @@ $books = $stmt->fetchAll();
     </div>
 </body>
 </html>
-
-<?php require_once '../includes/footer.php'; ?>

@@ -1,7 +1,8 @@
 <?php
+// Absolute first line - no whitespace before this!
 require_once('../includes/config.php');
-require_once('../includes/header.php');
 
+// Process form before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstname = $_POST['firstname'];
     $lastname = $_POST['lastname'];
@@ -9,23 +10,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $gender = $_POST['gender'];
     $registerdate = $_POST['registerdate'];
     
-    $stmt = $pdo->prepare("INSERT INTO student_information (firstname, lastname, email, gender, registerdate) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$firstname, $lastname, $email, $gender, $registerdate]);
-    
-    header("Location: index.php?added=1");
-    exit();
+    try {
+        $stmt = $pdo->prepare("INSERT INTO student_information (firstname, lastname, email, gender, registerdate) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$firstname, $lastname, $email, $gender, $registerdate]);
+        
+        // Clear any buffered output
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Redirect and exit
+        header("Location: index.php?added=1");
+        exit();
+    } catch (PDOException $e) {
+        // Handle error without outputting here
+        $error = $e->getMessage();
+    }
+}
+
+// Now include header
+require_once('../includes/header.php');
+
+// Display error if one occurred
+if (isset($error)) {
+    echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">';
+    echo '<span class="block sm:inline">Error: ' . htmlspecialchars($error) . '</span>';
+    echo '</div>';
 }
 ?>
 
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto ">
     <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-romantic-deepblue">Add New Student</h1>
-        <a href="index.php" class="flex items-center text-romantic-deepblue hover:text-romantic-lightblue">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-            </svg>
-            Back to Students
-        </a>
+        
     </div>
 
     <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-3xl mx-auto">
@@ -138,4 +154,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>

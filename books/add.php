@@ -1,98 +1,145 @@
-<div class="mb-3">
 <?php
+// Start output buffering before anything else
+ob_start();
+
 require_once '../includes/config.php';
-require_once '../includes/header.php';
+
+// Initialize variables
+$errors = [];
+$bookname = $bookcode = $booknote = '';
+$created_at = date('Y'); // Default to current year
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $bookname = $_POST['bookname'];
-    $bookcode = $_POST['bookcode'];
-    $booknote = $_POST['booknote'];
-    $created_at = $_POST['created_at'];
+    // Sanitize and validate inputs
+    $bookname = trim($_POST['bookname']);
+    $bookcode = trim($_POST['bookcode']);
+    $booknote = trim($_POST['booknote']);
+    $created_at = (int)$_POST['created_at'];
 
-    $stmt = $pdo->prepare("INSERT INTO booklist (bookname, bookcode,booknote,created_at) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$bookname, $bookcode, $booknote, $created_at]);
+    // Validate inputs
+    if (empty($bookname)) {
+        $errors['bookname'] = 'Book title is required';
+    } elseif (strlen($bookname) > 255) {
+        $errors['bookname'] = 'Book title must be less than 255 characters';
+    }
 
-    header("Location: index.php?added=1");
-    
-    exit();
+    if (empty($bookcode)) {
+        $errors['bookcode'] = 'Book code is required';
+    } elseif (strlen($bookcode) > 100) {
+        $errors['bookcode'] = 'Book code must be less than 100 characters';
+    } else {
+        // Check if book code already exists
+        $stmt = $pdo->prepare("SELECT id FROM booklist WHERE bookcode = ? AND deleted = 0");
+        $stmt->execute([$bookcode]);
+        if ($stmt->fetch()) {
+            $errors['bookcode'] = 'This book code already exists';
+        }
+    }
+
+    if ($created_at < 1000 || $created_at > date('Y') + 1) {
+        $errors['created_at'] = 'Invalid year';
+    }
+
+    // If no errors, insert into database
+    if (empty($errors)) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO booklist (bookname, bookcode, booknote, created_at) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$bookname, $bookcode, $booknote, $created_at]);
+
+            // Redirect (now safe because of output buffering)
+            header("Location: index.php?added=1");
+            exit();
+        } catch (PDOException $e) {
+            $errors['database'] = "Error adding book: " . $e->getMessage();
+        }
+    }
 }
+
+// Load the HTML layout after logic
+require_once '../includes/header.php';
 ?>
 
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto">
     <div class="flex justify-between items-center mb-8">
-        <h1 class="text-3xl font-bold text-romantic-deepblue">Add a New Book</h1>
-        <a href="books.php" class="flex items-center text-romantic-deepblue hover:text-romantic-lightblue">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-            </svg>
-            Back to Book Collection
-        </a>
+    
     </div>
+
+    <?php if (!empty($errors)): ?>
+        <div class="mb-6 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-lg shadow-sm">
+            <h3 class="font-bold mb-2">Please fix the following errors:</h3>
+            <ul class="list-disc pl-5">
+                <?php foreach ($errors as $error): ?>
+                    <li><?= htmlspecialchars($error) ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    <?php endif; ?>
 
     <div class="bg-white rounded-xl shadow-lg overflow-hidden max-w-3xl mx-auto">
         <div class="bg-gradient-to-r from-romantic-lightblue to-romantic-deepblue px-6 py-4">
             <h2 class="text-xl font-semibold text-white">New Book Details</h2>
         </div>
-        
+
         <form method="post" class="p-6">
             <div class="grid grid-cols-1 gap-6">
-                <!-- Book Name -->
+                <!-- Book Title -->
                 <div class="space-y-2">
-                    <label for="bookname" class="block text-sm font-medium text-gray-700">Book Title</label>
+                    <label for="bookname" class="block text-sm font-medium text-gray-700">Book Title *</label>
                     <input 
                         type="text" 
                         id="bookname" 
                         name="bookname" 
+                        value="<?= htmlspecialchars($bookname) ?>" 
                         required
-                        class="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-romantic-lightblue focus:border-transparent"
+                        class="mt-1 block w-full border <?= isset($errors['bookname']) ? 'border-red-500' : 'border-gray-300' ?> rounded-lg px-4 py-2"
                         placeholder="Enter the book title"
                     >
                 </div>
-                
+
                 <!-- Book Code -->
                 <div class="space-y-2">
-                    <label for="bookcode" class="block text-sm font-medium text-gray-700">Book Code</label>
+                    <label for="bookcode" class="block text-sm font-medium text-gray-700">Book Code *</label>
                     <input 
                         type="text" 
                         id="bookcode" 
                         name="bookcode" 
+                        value="<?= htmlspecialchars($bookcode) ?>" 
                         required
-                        class="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-romantic-lightblue focus:border-transparent"
+                        class="mt-1 block w-full border <?= isset($errors['bookcode']) ? 'border-red-500' : 'border-gray-300' ?> rounded-lg px-4 py-2"
                         placeholder="Enter unique book code"
                     >
                 </div>
-                
-                <!-- Author -->
+
+                <!-- Book Note -->
                 <div class="space-y-2">
-                    <label for="author" class="block text-sm font-medium text-gray-700">Book Note</label>
-                    <input 
-                        type="text" 
+                    <label for="booknote" class="block text-sm font-medium text-gray-700">Book Note</label>
+                    <textarea
                         id="booknote" 
                         name="booknote" 
-                        required
-                        class="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-romantic-lightblue focus:border-transparent"
-                        placeholder="Enter note"
-                    >
+                        rows="3"
+                        class="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2"
+                        placeholder="Enter any notes about the book"
+                    ><?= htmlspecialchars($booknote) ?></textarea>
                 </div>
-                
-                <!-- Published Year -->
+
+                <!-- Created Year -->
                 <div class="space-y-2">
-                    <label for="published_year" class="block text-sm font-medium text-gray-700">Created Date</label>
+                    <label for="created_at" class="block text-sm font-medium text-gray-700">Publication Year *</label>
                     <input 
                         type="number" 
                         id="created_at" 
                         name="created_at" 
+                        value="<?= htmlspecialchars($created_at) ?>" 
                         min="1000" 
                         max="<?= date('Y') + 1 ?>"
-                        class="mt-1 block w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-romantic-lightblue focus:border-transparent"
+                        class="mt-1 block w-full border <?= isset($errors['created_at']) ? 'border-red-500' : 'border-gray-300' ?> rounded-lg px-4 py-2"
                         placeholder="Year of publication"
                     >
                 </div>
             </div>
-            
-            <!-- Form Actions -->
+
             <div class="mt-8 flex justify-end gap-3">
-                <a href="books.php" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                <a href="index.php" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
                     Cancel
                 </a>
                 <button 
@@ -109,4 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php
+// Flush output at the end
+ob_end_flush();
+?>

@@ -1,5 +1,5 @@
 <?php
-require_once '../../includes/config.php';
+require_once '../includes/config.php';
 
 if (isset($_GET['id'])) {
     $id = (int)$_GET['id'];
@@ -8,5 +8,5 @@ if (isset($_GET['id'])) {
     $stmt->execute([$id]);
 }
 
-header("Location: transactions.php?returned=1");
+header("Location: index.php?returned=1");
 exit();

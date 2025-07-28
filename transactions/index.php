@@ -424,5 +424,3 @@ $books = $pdo->query("SELECT id, bookname FROM booklist ORDER BY bookname")->fet
     </div>
 </body>
 </html>
-
-<?php require_once '../includes/footer.php'; ?>
