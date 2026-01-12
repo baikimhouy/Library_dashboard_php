@@ -157,6 +157,5 @@ require_once '../../includes/header.php';
 </div>
 
 <?php
-// Flush output at the end
 ob_end_flush();
 ?>

@@ -1,5 +1,4 @@
 <?php
-// Absolute first thing - start output buffering
 if (!ob_get_level()) {
     ob_start();
 }
@@ -13,9 +12,7 @@ require_once 'config.php';
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
   <title>Library Management System</title>
 
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
     tailwind.config = {
@@ -165,7 +162,6 @@ require_once 'config.php';
         </div>
       </nav>
 
-      <!-- User/Settings at bottom -->
       <div class="pt-4 border-t border-white/20 mt-auto">
         <div class="flex items-center p-3 mb-2">
           <div class="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center mr-3">

@@ -253,7 +253,6 @@ $stats = [
     </div>
   </main>
 
-  <!-- JavaScript -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const menuBtn = document.getElementById('menu-btn');
