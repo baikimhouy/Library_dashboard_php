@@ -2,7 +2,7 @@
 // Start output buffering before anything else
 ob_start();
 
-require_once '../includes/config.php';
+require_once '../../database/migrations/database.php';
 
 // Initialize variables
 $errors = [];
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Load the HTML layout after logic
-require_once '../includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <div class="container mx-auto">

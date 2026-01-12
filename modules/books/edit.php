@@ -1,6 +1,6 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/header.php';
+require_once '../../database/migrations/database.php';
+require_once '../../includes/header.php';
 
 if (!isset($_GET['id'])) {
     header("Location: index.php");
@@ -30,7 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<div class="container mx-auto px-4 py-8">
+<div class="flex-1 md:ml-64 lg:ml-64 p-4 md:p-6 transition-all duration-300 min-h-screen">
+      <div id="overlay" class="fixed inset-0 bg-black/50 z-40 md:hidden hidden backdrop-blur-sm transition-opacity duration-300"></div>
+
     <div class="flex justify-between items-center mb-8">
        
     </div>

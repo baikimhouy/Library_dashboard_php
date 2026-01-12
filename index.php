@@ -1,13 +1,10 @@
 <?php
-// Absolute first thing - start output buffering
 if (!ob_get_level()) {
     ob_start();
 }
 
-require_once 'includes/config.php';
-$base_url = '/Library_Dashboard';
-
-// Get statistics for the dashboard
+require_once 'database/migrations/database.php';
+require_once 'includes/header.php';
 $stats = [
     'students' => $pdo->query("SELECT COUNT(*) FROM student_information")->fetchColumn(),
     'books' => $pdo->query("SELECT COUNT(*) FROM booklist")->fetchColumn(),
@@ -23,9 +20,8 @@ $stats = [
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Library Dashboard</title>
 
-  <!-- Tailwind CSS -->
+  
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
     tailwind.config = {
@@ -44,7 +40,7 @@ $stats = [
     }
   </script>
   <style>
-    /* Custom styles */
+    
     .sidebar-transition {
       transition: transform 0.3s ease-in-out;
     }
@@ -66,57 +62,11 @@ $stats = [
 </head>
 <body class="bg-romantic-pale min-h-screen flex flex-col md:flex-row">
 
-  <!-- Mobile Header (hidden on desktop) -->
-  <header class="md:hidden bg-gradient-to-r from-romantic-deepblue to-romantic-lightblue text-white p-4 flex justify-between items-center">
-    <h1 class="text-xl font-bold">Library System</h1>
-    <button id="menu-btn" class="text-white focus:outline-none text-2xl">
-      <i class="fas fa-bars"></i>
-    </button>
-  </header>
-
+  
   <!-- Sidebar -->
-  <aside id="sidebar" class="w-64 bg-gradient-to-b from-romantic-deepblue to-romantic-lightblue text-white shadow-lg fixed h-full sidebar-transition transform -translate-x-full md:translate-x-0 z-50">
-    <div class="p-4 h-full flex flex-col">
-      <!-- Logo/Brand -->
-      <div class="text-xl font-bold mb-8 pl-2 flex items-center">
-        <i class="fas fa-book-reader mr-2"></i>
-        <span>Library System</span>
-      </div>
-      
-      <!-- Navigation Links -->
-      <nav class="space-y-2 flex-1">
-        <a href="<?= $base_url ?>/index.php" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition">
-          <i class="fas fa-home w-5 h-5 mr-3 text-center"></i>
-          <span>Dashboard</span>
-        </a>
-        
-        <a href="<?= $base_url ?>/students/index.php" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition">
-          <i class="fas fa-user-graduate w-5 h-5 mr-3 text-center"></i>
-          <span>Students</span>
-        </a>
-        
-        <a href="<?= $base_url ?>/books/index.php" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition">
-          <i class="fas fa-book w-5 h-5 mr-3 text-center"></i>
-          <span>Books</span>
-        </a>
-        
-        <a href="<?= $base_url ?>/transactions/index.php" class="nav-item flex items-center p-3 rounded-lg hover:bg-white/20 transition">
-          <i class="fas fa-exchange-alt w-5 h-5 mr-3 text-center"></i>
-          <span>Transactions</span>
-        </a>
-      </nav>
 
-      <!-- User/Settings at bottom -->
-      <div class="pt-4 border-t border-white/20 mt-auto">
-        <a href="#" class="flex items-center p-3 rounded-lg hover:bg-white/20 transition">
-          <i class="fas fa-cog w-5 h-5 mr-3 text-center"></i>
-          <span>Settings</span>
-        </a>
-      </div>
-    </div>
-  </aside>
 
-  <!-- Overlay for mobile menu -->
+
   <div id="overlay" class="fixed inset-0 bg-black/50 z-40 md:hidden hidden"></div>
 
   <!-- Main Content -->
@@ -146,7 +96,7 @@ $stats = [
 
       <!-- Main Content Grid -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Quick Actions -->
+        
         <div class="bg-white card-hover rounded-xl overflow-hidden">
           <div class="bg-romantic-deepblue px-6 py-4">
             <h2 class="text-lg font-semibold text-white">Quick Actions</h2>
@@ -310,21 +260,21 @@ $stats = [
       const sidebar = document.getElementById('sidebar');
       const overlay = document.getElementById('overlay');
 
-      // Toggle sidebar on mobile
+    
       menuBtn.addEventListener('click', () => {
         sidebar.classList.toggle('-translate-x-full');
         overlay.classList.toggle('hidden');
         document.body.classList.toggle('overflow-hidden');
       });
 
-      // Close sidebar when clicking overlay
+      
       overlay.addEventListener('click', () => {
         sidebar.classList.add('-translate-x-full');
         overlay.classList.add('hidden');
         document.body.classList.remove('overflow-hidden');
       });
 
-      // Close sidebar when clicking outside on mobile
+  
       document.addEventListener('click', (e) => {
         if (window.innerWidth < 768 && 
             !sidebar.contains(e.target) && 
@@ -335,7 +285,7 @@ $stats = [
         }
       });
 
-      // Close sidebar when resizing to desktop
+      
       window.addEventListener('resize', () => {
         if (window.innerWidth >= 768) {
           sidebar.classList.remove('-translate-x-full');

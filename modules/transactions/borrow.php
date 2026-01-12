@@ -1,5 +1,5 @@
 <?php
-require_once '../includes/config.php';
+require_once '../../database/migrations/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $student_id = $_POST['student_id'];
@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
 }
 
-require_once '../includes/header.php'; // Now safe to include
+require_once '../../includes/header.php'; // Now safe to include
 
 
 // Fetch all students and available books

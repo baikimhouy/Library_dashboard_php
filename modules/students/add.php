@@ -1,6 +1,6 @@
 <?php
 // Absolute first line - no whitespace before this!
-require_once('../includes/config.php');
+require_once('../../database/migrations/database.php');
 
 // Process form before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Now include header
-require_once('../includes/header.php');
+require_once('../../includes/header.php');
 
 // Display error if one occurred
 if (isset($error)) {
@@ -40,6 +40,8 @@ if (isset($error)) {
 ?>
 
 <div class="container mx-auto ">
+<div id="overlay" class="fixed inset-0 bg-black/50 z-40 md:hidden hidden backdrop-blur-sm transition-opacity duration-300"></div>
+
     <div class="flex justify-between items-center mb-8">
         
     </div>

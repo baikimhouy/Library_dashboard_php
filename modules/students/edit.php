@@ -1,6 +1,6 @@
 <?php
-require_once '../includes/config.php';
-require_once '../includes/header.php';
+require_once '../../includes/header.php';
+require_once '../../database/migrations/database.php';
 
 if (!isset($_GET['id'])) {
     header("Location: index.php");
